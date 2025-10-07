@@ -367,10 +367,7 @@ elif page == "🚨 Urgency Classifier":
             urgent_count = df[df['Ticket Priority'].isin(urgent_priorities)].shape[0]
             non_urgent_count = df[df['Ticket Priority'].isin(non_urgent_priorities)].shape[0]
             
-            st.metric("🔥 Urgent Tickets", f"{urgent_count:,}", 
-                     f"{(urgent_count/len(df)*100):.1f}%")
-            st.metric("✅ Non-Urgent Tickets", f"{non_urgent_count:,}", 
-                     f"{(non_urgent_count/len(df)*100):.1f}%")
+           
         
         # --- Classification Section ---
         st.subheader("🔍 Classify a Ticket")
