@@ -240,38 +240,52 @@ if page == "📊 EDA Dashboard":
             col3.metric("Avg Customer Age", "N/A")
 
         # Top Products by Ticket Volume
-        st.subheader("🎯 Top Products by Ticket Volume")
-        if 'Product Purchased' in df.columns:
-            product_counts = df['Product Purchased'].value_counts().head(10)
-            if not product_counts.empty:
-                fig, ax = plt.subplots(figsize=(10, 4))
-                product_counts.plot(kind='bar', ax=ax, color='steelblue')
-                ax.set_ylabel("Ticket Count")
-                ax.set_xlabel("Product")
-                plt.xticks(rotation=45, ha='right')
-                plt.tight_layout()
-                st.pyplot(fig)
-            else:
-                st.info("No product data available.")
-        else:
-            st.warning("'Product Purchased' column not found in data.")
+st.subheader("🎯 Top Products by Ticket Volume")
+if 'Product Purchased' in df.columns:
+    product_counts = df['Product Purchased'].value_counts().head(10)
+    if not product_counts.empty:
+        fig, ax = plt.subplots(figsize=(10, 4))
+        bars = product_counts.plot(kind='bar', ax=ax, color='steelblue')
+        ax.set_ylabel("Ticket Count")
+        ax.set_xlabel("Product")
+        plt.xticks(rotation=45, ha='right')
 
-        # Ticket Status Distribution
-        st.subheader("📌 Ticket Status Distribution")
-        if 'Ticket Status' in df.columns:
-            status_counts = df['Ticket Status'].value_counts()
-            if not status_counts.empty:
-                fig2, ax2 = plt.subplots(figsize=(8, 4))
-                status_counts.plot(kind='bar', ax=ax2, color='orange')
-                ax2.set_ylabel("Count")
-                ax2.set_xlabel("Status")
-                plt.xticks(rotation=45, ha='right')
-                plt.tight_layout()
-                st.pyplot(fig2)
-            else:
-                st.info("No status data available.")
-        else:
-            st.warning("'Ticket Status' column not found in data.")
+        # ➕ Add data labels
+        for i, v in enumerate(product_counts.values):
+            ax.text(i, v + 1, str(v), ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+        plt.tight_layout()
+        st.pyplot(fig)
+    else:
+        st.info("No product data available.")
+else:
+    st.warning("'Product Purchased' column not found in data.")
+
+
+    
+
+      # Ticket Status Distribution
+st.subheader("📌 Ticket Status Distribution")
+if 'Ticket Status' in df.columns:
+    status_counts = df['Ticket Status'].value_counts()
+    if not status_counts.empty:
+        fig2, ax2 = plt.subplots(figsize=(8, 4))
+        status_counts.plot(kind='bar', ax=ax2, color='orange')
+        ax2.set_ylabel("Count")
+        ax2.set_xlabel("Status")
+        plt.xticks(rotation=45, ha='right')
+
+        # ➕ Add data labels
+        for i, v in enumerate(status_counts.values):
+            ax2.text(i, v + 1, str(v), ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+        plt.tight_layout()
+        st.pyplot(fig2)
+    else:
+        st.info("No status data available.")
+else:
+    st.warning("'Ticket Status' column not found in data.")
+
     
     except Exception as e:
         st.error(f"❌ Error displaying dashboard: {str(e)}")
