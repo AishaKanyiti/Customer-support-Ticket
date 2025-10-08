@@ -273,11 +273,157 @@ elif page == "🤖 RAG Query Assistant":
 # =========================================================
 # 🧭 PAGE 3 — URGENCY CLASSIFIER
 # =========================================================
-elif page == "🚨 Urgency Classifier":
-    st.title("🚨 Ticket Urgency Classifier")
-    st.markdown("""
-    This classifier uses ticket priority to determine urgency:
-    - **Urgent**: Critical, High priority tickets
-    - **Not Urgent**: Medium, Low priority tickets
-    """)
-    # (no changes needed here)
+
+        # --- Classification Section ---
+        st.subheader("🔍 Classify a Ticket")
+        
+        # Three input methods
+        input_method = st.radio("Choose input method:", 
+                                ["Enter Ticket ID", "Select Priority Manually", "Predict from New Description"])
+        
+        if input_method == "Enter Ticket ID":
+            if 'Ticket ID' in df.columns:
+                ticket_id = st.text_input("🎫 Enter Ticket ID:")
+                
+                if st.button("🔍 Classify by Ticket ID"):
+                    if not ticket_id.strip():
+                        st.warning("⚠️ Please enter a Ticket ID.")
+                    else:
+                        # Find ticket in dataset
+                        ticket_data = df[df['Ticket ID'].astype(str) == ticket_id.strip()]
+                        
+                        if ticket_data.empty:
+                            st.error(f"❌ Ticket ID '{ticket_id}' not found in dataset.")
+                        else:
+                            ticket_info = ticket_data.iloc[0]
+                            priority = ticket_info['Ticket Priority']
+                            
+                            # Display ticket info
+                            with st.expander("📋 Ticket Details", expanded=True):
+                                st.write(f"**Ticket ID:** {ticket_info['Ticket ID']}")
+                                st.write(f"**Priority:** {priority}")
+                                if 'Ticket Subject' in ticket_info:
+                                    st.write(f"**Subject:** {ticket_info['Ticket Subject']}")
+                                if 'Ticket Description' in ticket_info:
+                                    st.write(f"**Description:** {ticket_info['Ticket Description']}")
+                                if 'Ticket Status' in ticket_info:
+                                    st.write(f"**Status:** {ticket_info['Ticket Status']}")
+                            
+                            # Classify based on priority
+                            classify_and_display(priority)
+            else:
+                st.warning("⚠️ 'Ticket ID' column not found in dataset. Please use manual priority selection.")
+        
+        elif input_method == "Select Priority Manually":
+            st.info("💡 Select a priority level to see its urgency classification.")
+            
+            # Get unique priorities from dataset
+            available_priorities = df['Ticket Priority'].unique().tolist()
+            
+            if not available_priorities:
+                st.error("❌ No priority values found in dataset.")
+            else:
+                selected_priority = st.selectbox("📌 Select Ticket Priority:", 
+                                                 sorted(available_priorities))
+                
+                if st.button("🔮 Classify Priority"):
+                    classify_and_display(selected_priority)
+                    
+                    # Show sample tickets with this priority
+                    st.subheader(f"📑 Sample Tickets with '{selected_priority}' Priority")
+                    sample_tickets = df[df['Ticket Priority'] == selected_priority].head(5)
+                    
+                    if 'Ticket Description' in sample_tickets.columns:
+                        for idx, row in sample_tickets.iterrows():
+                            with st.expander(f"Ticket: {row.get('Ticket Subject', 'N/A')}"):
+                                st.write(f"**Description:** {row['Ticket Description']}")
+                                if 'Ticket Status' in row:
+                                    st.write(f"**Status:** {row['Ticket Status']}")
+        
+        else:  # Predict from New Description
+            st.info("🤖 Enter a ticket description to predict urgency using pre-trained machine learning model.")
+            
+            # Load pre-trained model
+            with st.spinner("🔄 Loading pre-trained ML model..."):
+                model, vectorizer, feature_cols, message = load_pretrained_urgency_model()
+            
+            if model is None:
+                st.error(f"❌ Unable to load model: {message}")
+                st.info("Please ensure the following files are present:")
+                st.code("""
+- urgency_model_engineered.joblib
+- urgency_vectorizer_engineered.joblib
+- urgency_feature_cols.joblib
+                """)
+            else:
+                st.success(f"✅ {message}")
+                
+                # Input for new ticket
+                st.markdown("---")
+                new_description = st.text_area(
+                    "📝 Enter New Ticket Description:",
+                    height=150,
+                    placeholder="Example: My account has been locked and I cannot access critical financial data. This is blocking our entire team's work. Need urgent help!"
+                )
+                
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    predict_button = st.button("🔮 Predict Urgency", type="primary")
+                
+                if predict_button:
+                    if not new_description.strip():
+                        st.warning("⚠️ Please enter a ticket description.")
+                    else:
+                        with st.spinner("🤔 Analyzing ticket..."):
+                            prediction, confidence, error = predict_urgency_from_description(
+                                new_description, model, vectorizer, feature_cols
+                            )
+                        
+                        if error:
+                            st.error(f"❌ {error}")
+                        else:
+                            st.markdown("---")
+                            st.subheader("📊 Prediction Results")
+                            
+                            # Display prediction
+                            if prediction == 1:
+                                st.success("🔥 **URGENT TICKET PREDICTED**")
+                                st.error(f"⚠️ **Confidence: {confidence:.1%}**")
+                                st.warning("💡 **Recommendation:** This ticket likely requires immediate attention!")
+                                
+                                st.write("""
+                                **Suggested Actions:**
+                                - Treat as high priority
+                                - Escalate to senior support team
+                                - Respond within 1-2 hours
+                                - Monitor closely until resolved
+                                - Keep customer updated frequently
+                                """)
+                                
+                                # Show similar urgent tickets from dataset
+                                st.markdown("---")
+                                st.subheader("📋 Similar Urgent Tickets from History")
+                                urgent_tickets = df[df['Ticket Priority'].isin(['Critical', 'High'])]
+                                if not urgent_tickets.empty:
+                                    sample = urgent_tickets.sample(min(3, len(urgent_tickets)))
+                                    for idx, row in sample.iterrows():
+                                        with st.expander(f"Example: {row.get('Ticket Subject', 'N/A')[:50]}..."):
+                                            st.write(f"**Priority:** {row['Ticket Priority']}")
+                                            st.write(f"**Description:** {row['Ticket Description'][:200]}...")
+                            
+                            else:
+                                st.info("✅ **NON-URGENT TICKET PREDICTED**")
+                                st.success(f"📊 **Confidence: {confidence:.1%}**")
+                                st.write("💡 **Recommendation:** This ticket can be handled with standard priority.")
+                                
+                                st.write("""
+                                **Suggested Actions:**
+                                - Add to regular support queue
+                                - Respond within 24-48 hours
+                                - Follow standard procedures
+                                - Update customer as needed
+                                """)
+    
+    except Exception as e:
+        st.error(f"❌ Error in Urgency Classifier: {str(e)}")
+dont change anything i just want the charts in the dashboard to have data labels
