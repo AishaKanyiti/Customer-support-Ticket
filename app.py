@@ -269,14 +269,47 @@ elif page == "🤖 RAG Query Assistant":
                         st.write(rag["docs"][i])
     except Exception as e:
         st.error(f"❌ Error initializing RAG system: {str(e)}")
-
 # =========================================================
-# 🧭 PAGE 3 — URGENCY CLASSIFIER
+# 🧭 PAGE 3 — URGENCY CLASSIFIER (PRIORITY-BASED)
 # =========================================================
+elif page == "🚨 Urgency Classifier":
+    st.title("🚨 Ticket Urgency Classifier")
+    st.markdown("""
+    This classifier uses ticket priority to determine urgency:
+    - **Urgent**: Critical, High priority tickets
+    - **Not Urgent**: Medium, Low priority tickets
+    """)
 
+    try:
+        # Check if Ticket Priority column exists
+        if 'Ticket Priority' not in df.columns:
+            st.error("❌ 'Ticket Priority' column not found in dataset.")
+            st.stop()
+        
+        # Display priority distribution
+        st.subheader("📊 Priority Distribution in Dataset")
+        priority_counts = df['Ticket Priority'].value_counts()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Priority Breakdown:**")
+            for priority, count in priority_counts.items():
+                st.write(f"- {priority}: {count:,} tickets")
+        
+        with col2:
+            # Show urgent vs non-urgent split
+            urgent_priorities = ['Critical', 'High']
+            non_urgent_priorities = ['Medium', 'Low']
+            
+            urgent_count = df[df['Ticket Priority'].isin(urgent_priorities)].shape[0]
+            non_urgent_count = df[df['Ticket Priority'].isin(non_urgent_priorities)].shape[0]
+            
+           
+        
         # --- Classification Section ---
         st.subheader("🔍 Classify a Ticket")
-        
+    
         # Three input methods
         input_method = st.radio("Choose input method:", 
                                 ["Enter Ticket ID", "Select Priority Manually", "Predict from New Description"])
@@ -426,4 +459,4 @@ elif page == "🤖 RAG Query Assistant":
     
     except Exception as e:
         st.error(f"❌ Error in Urgency Classifier: {str(e)}")
-dont change anything i just want the charts in the dashboard to have data labels
+
